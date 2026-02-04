@@ -1,5 +1,6 @@
 package practica2.model.buscaminas;
 
+import java.util.ArrayDeque;
 import java.util.Random;
 
 /**
@@ -154,78 +155,73 @@ public class Tablero {
     /**
      * Aplica el efecto dominó para descubrir automáticamente casillas vecinas
      * seguras.
-     * Se ejecuta cuando se descubre una casilla sin minas adyacentes.
+     * Se ejecuta cuando se descubre una casilla sin minas adyacentes (0).
      * 
      * @param fila    Fila de la casilla descubierta
      * @param columna Columna de la casilla descubierta
      * @return Número de casillas descubiertas durante el efecto dominó
      */
     public int aplicarEfectoDomino(int fila, int columna) {
-        return aplicarEfectoDominoConMatrizVisitadas(fila, columna, new boolean[filas][columnas]);
-    }
+        // Implementación iterativa (evita StackOverflowError en tableros grandes como 100x100)
+        boolean[][] visitadas = new boolean[filas][columnas];
+        ArrayDeque<Integer> pendientes = new ArrayDeque<>();
 
-    /**
-     * Aplica el efecto dominó utilizando una matriz de visitadas para evitar ciclos.
-     * 
-     * @param fila    Fila de la casilla descubierta
-     * @param columna Columna de la casilla descubierta
-     * @param visitadas Matriz que indica si una casilla ha sido visitada en esta recursión
-     * @return Número de casillas descubiertas durante el efecto dominó
-     */
-    private int aplicarEfectoDominoConMatrizVisitadas(int fila, int columna, boolean[][] visitadas) {
-        // Verificamos si la coordenada es válida y no ha sido visitada en esta recursión
-        if (!esCoordenadaValida(fila, columna) || visitadas[fila][columna]) {
-            return 0;
-        }
-        
-        // Marcar como visitada para evitar ciclos
-        visitadas[fila][columna] = true;
-        
-        // Si la casilla está marcada o contiene una mina, no hacemos nada
-        if (matrizCasillas[fila][columna].estaMarcada() || matrizCasillas[fila][columna].contieneMina()) {
-            return 0;
-        }
-        
-        // Si la casilla ya está descubierta, no la descubrimos de nuevo
-        if (!matrizCasillas[fila][columna].estaCubierta()) {
-            // Pero continuamos con las vecinas si no tiene minas adyacentes
-            if (matrizCasillas[fila][columna].getNumeroMinasAdyacentes() == 0) {
-                return descubrirCasillasAdyacentes(fila, columna, visitadas);
+        // Empaquetar coordenadas en un int para evitar crear muchos objetos
+        pendientes.push(fila * columnas + columna);
+
+        int casillasDescubiertas = 0;
+
+        while (!pendientes.isEmpty()) {
+            int key = pendientes.pop();
+            int f = key / columnas;
+            int c = key % columnas;
+
+            if (!esCoordenadaValida(f, c)) {
+                continue;
             }
-            return 0;
+            if (visitadas[f][c]) {
+                continue;
+            }
+            visitadas[f][c] = true;
+
+            Casilla casilla = matrizCasillas[f][c];
+
+            // Si la casilla está marcada o contiene una mina, no hacemos nada
+            if (casilla.estaMarcada() || casilla.contieneMina()) {
+                continue;
+            }
+
+            // Si la casilla ya está descubierta, no la contamos, pero continuamos con las
+            // vecinas únicamente si no tiene minas adyacentes.
+            if (!casilla.estaCubierta()) {
+                if (casilla.getNumeroMinasAdyacentes() == 0) {
+                    encolarVecinas(pendientes, f, c);
+                }
+                continue;
+            }
+
+            // Descubrir la casilla y contarla
+            casilla.descubrir();
+            casillasDescubiertas++;
+
+            // Si no tiene minas adyacentes, continuar con las casillas vecinas
+            if (casilla.getNumeroMinasAdyacentes() == 0) {
+                encolarVecinas(pendientes, f, c);
+            }
         }
-        
-        // Descubrir la casilla
-        matrizCasillas[fila][columna].descubrir();
-        int casillasDescubiertas = 1;
-        
-        // Si no tiene minas adyacentes, continuar con las casillas vecinas
-        if (matrizCasillas[fila][columna].getNumeroMinasAdyacentes() == 0) {
-            casillasDescubiertas += descubrirCasillasAdyacentes(fila, columna, visitadas);
-        }
-        
+
         return casillasDescubiertas;
     }
 
-    /**
-     * Descubre todas las casillas adyacentes a una casilla dada.
-     * 
-     * @param fila    Fila de la casilla
-     * @param columna Columna de la casilla
-     * @param visitadas Matriz que indica si una casilla ha sido visitada en esta recursión
-     * @return Número de casillas descubiertas
-     */
-    private int descubrirCasillasAdyacentes(int fila, int columna, boolean[][] visitadas) {
-        int casillasDescubiertas = 0;
+    private void encolarVecinas(ArrayDeque<Integer> pendientes, int fila, int columna) {
         for (int i = fila - 1; i <= fila + 1; i++) {
             for (int j = columna - 1; j <= columna + 1; j++) {
                 // No procesar la misma casilla
                 if (i != fila || j != columna) {
-                    casillasDescubiertas += aplicarEfectoDominoConMatrizVisitadas(i, j, visitadas);
+                    pendientes.push(i * columnas + j);
                 }
             }
         }
-        return casillasDescubiertas;
     }
 
     /**
