@@ -1,0 +1,81 @@
+Practica2/ (src/main/java/practica2)
+├── App.java                                  // Punto de entrada (arranque en EDT y creación de MarcoPrincipal)
+├── AppConfig.java                             // Configuración centralizada (tamaños/valores app-level)
+├── AppCompositionRoot.java                   // Composition Root (wiring de dependencias / DIP)
+│
+├── model/                                    // Domain Model
+│   ├── core/                                 // Clases generales del dominio
+│   │   ├── Jugador.java                      // Encapsula la información del jugador
+│   │   ├── Partida.java                      // Estructura común de una partida (estado tipado)
+│   │   ├── EstadoPartida.java                // Enum de estado (EN_CURSO/PAUSADA/FINALIZADA/...)
+│   │   ├── ResultadoPartida.java              // Enum de resultado (GANADA/PERDIDA)
+│   │   ├── Reporte.java                      // Base de reportes
+│   │   ├── ConfiguracionGeneral.java         // Utilidades/config comunes
+│   │   ├── TemporizadorPartida.java          // Temporizador y control de tiempo de partida
+│   │   ├── TemporizadorRunnable.java         // Runnable del temporizador (hilo/tarea)
+│   │   └── TemporizadorObservador.java       // Contrato para notificaciones del temporizador
+│   │
+│   ├── buscaminas/                           // Juego Buscaminas
+│   │   ├── Tablero.java                      // Tablero: matriz de casillas y lógica asociada
+│   │   ├── Casilla.java                      // Casilla (mina/estado/adyacentes)
+│   │   ├── JuegoBuscaminas.java              // Lógica principal de Buscaminas
+│   │   ├── ConfiguracionBuscaminas.java      // Parámetros del juego
+│   │   └── ReporteBuscaminas.java            // Reporte de partida (ganada/perdida)
+│   │
+│   ├── hunting/                              // Juego Hunting
+│   │   ├── Pato.java                         // Entidad pato (posición/estado)
+│   │   ├── PatoRunnable.java                 // Movimiento/aparición del pato (hilo/tarea)
+│   │   ├── JuegoHunting.java                 // Lógica principal de Hunting
+│   │   ├── HuntingJuegoObservador.java        // Contrato observador del modelo Hunting
+│   │   ├── ConfiguracionHunting.java         // Parámetros del juego
+│   │   └── ReporteHunting.java               // Reporte de partida
+│   │
+│   ├── persistencia/                         // Persistencia de reportes (archivos)
+│   │   ├── RepositorioReportes.java          // Interfaz (DIP) para persistencia
+│   │   ├── PersistenciaReportes.java         // Implementación de persistencia basada en archivos
+│   │   ├── ExcepcionPersistencia.java         // Error de lectura/escritura de reportes (feedback hacia UI)
+│   │   ├── ReporteBuscaminasRegistro.java    // DTO de persistencia (fila de reporte Buscaminas)
+│   │   └── ReporteHuntingRegistro.java       // DTO de persistencia (fila de reporte Hunting)
+│   │
+│   ├── validacion/                           // Validación de configuraciones (SRP)
+│   │   ├── Validador.java                    // Interfaz genérica de validación
+│   │   ├── ValidadorConfiguracionBuscaminas.java
+│   │   └── ValidadorConfiguracionHunting.java
+│   │
+│   └── excepciones/                          // Excepciones del dominio
+│       └── ExcepcionJuego.java               // Errores específicos de lógica de juego
+│
+├── view/                                     // GUI Swing (ignorar archivos .form)
+│   ├── comun/
+│   │   ├── MarcoPrincipal.java               // Ventana principal / contenedor de paneles
+│   │   ├── PanelMenu.java                    // Menú principal
+│   │   ├── PanelReportes.java                // Visualización de reportes (tablas)
+│   │   ├── UiTheme.java                      // Constantes de tema/colores
+│   │   ├── UiIcons.java                      // Cache/carga de íconos
+│   │   ├── UiStyles.java                     // Estilos reutilizables (botones, etc.)
+│   │   └── MainPrueba.java                   // Entry/test manual de UI (si se usa)
+│   │
+│   ├── buscaminas/
+│   │   ├── PanelConfigBuscaminas.java        // Configuración/inicio de partida
+│   │   └── PanelBuscaminas.java              // Juego Buscaminas (tablero + controles)
+│   │
+│   └── hunting/
+│       ├── MarcoHunting.java                 // Ventana/panel wrapper de Hunting (si aplica)
+│       ├── PanelConfigHunting.java           // Configuración/inicio de Hunting
+│       └── PanelHunting.java                 // Juego Hunting (área de juego + controles)
+│
+└── controller/                               // Coordinación Vista ↔ Modelo (Command + Observers)
+    ├── ControladorBuscaminas.java            // Orquesta partida, comandos y reportes de Buscaminas
+    ├── BuscaminasObservador.java             // Contrato observador para UI Buscaminas
+    ├── ControladorHunting.java               // Orquesta partida, comandos y reportes de Hunting
+    ├── HuntingObservador.java                // Contrato observador para UI Hunting
+    ├── UiNotifier.java                       // Helper mínimo para ejecutar acciones en EDT
+    │
+    └── comando/
+        ├── Comando.java                      // Interfaz base: ejecutar()
+        ├── ComandoDescubrirCasilla.java      // Descubrir casilla (Buscaminas)
+        ├── ComandoMarcarCasilla.java         // Marcar/desmarcar casilla (Buscaminas)
+        ├── ComandoIniciarJuego.java          // Iniciar partida Buscaminas (configuración)
+        ├── ComandoIniciarHunting.java        // Iniciar partida Hunting (configuración)
+        ├── ComandoDisparar.java              // Disparo en Hunting (validación acierto/fallo)
+        └── ComandoActualizarReporte.java     // Persistir reporte al finalizar partida
